@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Wakasa91 — Luxury Automotive</title>
+
+<!-- Three.js & Loaders via CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/pmrem/PMREMGenerator.js"></script>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Bebas+Neue&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+
+<style>
+  /* ── RESET & BASE ── */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --black:    #050507;
+    --deep:     #0a0a0f;
+    --charcoal: #111118;
+    --panel:    #16161e;
+    --border:   rgba(255,255,255,0.07);
+    --silver:   #a8aab8;
+    --white:    #eeeef2;
+    --gold:     #c8a96e;
+    --gold2:    #e8c97e;
+    --neon:     #00d4ff;
+    --neon2:    #0099cc;
+    --glow:     rgba(0,212,255,0.15);
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-serif:   'Cormorant Garamond', serif;
+    --font-body:    'Inter', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* ── CUSTOM CURSOR ── */
+  #cursor {
+    position: fixed; width: 12px; height: 12px;
+    background: var(--gold); border-radius: 50%;
+    pointer-events: none; z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: transform 0.1s, width 0.2s, height 0.2s, background 0.2s;
+    mix-blend-mode: difference;
+  }
+  #cursor-ring {
+    position: fixed; width: 36px; height: 36px;
+    border: 1px solid var(--gold); border-radius: 50%;
+    pointer-events: none; z-index: 9998;
+    transform: translate(-50%,-50%);
+    transition: transform 0.18s ease, width 0.3s, height 0.3s, opacity 0.3s;
+    opacity: 0.5;
+  }
+  body:hover #cursor { opacity: 1; }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.4;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: var(--black); }
+  ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 40px;
+    background: linear-gradient(to bottom, rgba(5,5,7,0.95) 0%, transparent 100%);
+    backdrop-filter: blur(0px);
+    transition: all 0.4s;
+  }
+  nav.scrolled {
+    padding: 14px 40px;
+    background: rgba(5,5,7,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    display: flex; align-items: center; gap: 12px; text-decoration: none;
+  }
+  .nav-logo img {
+    width: 44px; height: 44px;
+    border-radius: 50%; object-fit: cover;
+    border: 1px solid var(--gold);
+    filter: drop-shadow(0 0 8px rgba(200,169,110,0.4));
+  }
+  .nav-logo span {
+    font-family: var(--font-display);
+    font-size: 1.5rem; letter-spacing: 0.15em;
+    color: var(--gold);
+  }
+
+  .nav-links {
+    display: flex; gap: 32px; list-style: none;
+  }
+  .nav-links a {
+    font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--silver); text-decoration: none;
+    transition: color 0.3s;
+    position: relative;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute; bottom: -4px; left: 0;
+    width: 0; height: 1px; background: var(--gold);
+    transition: width 0.3s;
+  }
+  .nav-links a:hover { color: var(--gold); }
+  .nav-links a:hover::after { width: 100%; }
+
+  .nav-cta {
+    font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--black); background: var(--gold);
+    border: none; padding: 10px 22px; cursor: pointer;
+    font-family: var(--font-body); font-weight: 500;
+    transition: all 0.3s; text-decoration: none;
+  }
+  .nav-cta:hover { background: var(--gold2); transform: translateY(-1px); }
+
+  /* ── HERO ── */
+  #hero {
+    position: relative; width: 100%; height: 100vh;
+    overflow: hidden; display: flex; align-items: center;
+  }
+
+  #canvas-container {
+    position: absolute; inset: 0; z-index: 1;
+  }
+  #canvas-container canvas { display: block; }
+
+  .hero-content {
+    position: relative; z-index: 2;
+    padding: 0 6vw; pointer-events: none;
+    max-width: 620px;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.65rem; letter-spacing: 0.35em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+    opacity: 0; animation: fadeUp 0.8s 0.3s forwards;
+  }
+  .hero-eyebrow::before {
+    content: ''; display: block; width: 32px; height: 1px; background: var(--gold);
+  }
+
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(4rem, 10vw, 8rem);
+    line-height: 0.92; letter-spacing: 0.02em;
+    color: var(--white);
+    opacity: 0; animation: fadeUp 0.9s 0.5s forwards;
+  }
+  .hero-title span { color: var(--gold); }
+
+  .hero-subtitle {
+    font-family: var(--font-serif);
+    font-size: clamp(1rem, 2vw, 1.3rem);
+    font-weight: 300; color: var(--silver);
+    margin-top: 20px; line-height: 1.6;
+    opacity: 0; animation: fadeUp 0.9s 0.7s forwards;
+  }
+
+  .hero-actions {
+    display: flex; gap: 16px; margin-top: 36px; pointer-events: all;
+    opacity: 0; animation: fadeUp 0.9s 0.9s forwards;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--black); background: var(--gold);
+    border: none; padding: 14px 32px; cursor: pointer;
+    font-family: var(--font-body); font-weight: 500;
+    transition: all 0.3s; text-decoration: none; display: inline-block;
+  }
+  .btn-primary:hover { background: var(--gold2); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(200,169,110,0.3); }
+
+  .btn-ghost {
+    font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--white); background: transparent;
+    border: 1px solid rgba(255,255,255,0.25); padding: 14px 32px; cursor: pointer;
+    font-family: var(--font-body); font-weight: 400;
+    transition: all 0.3s; text-decoration: none; display: inline-block;
+  }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* Scroll indicator */
+  .scroll-hint {
+    position: absolute; bottom: 32px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 2; display: flex; flex-direction: column;
+    align-items: center; gap: 8px;
+    opacity: 0; animation: fadeIn 1s 1.5s forwards;
+  }
+  .scroll-hint span {
+    font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--silver);
+  }
+  .scroll-arrow {
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--gold));
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+
+  /* Loading overlay */
+  #loading-screen {
+    position: fixed; inset: 0; background: var(--black);
+    z-index: 1000; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 24px;
+    transition: opacity 0.8s, visibility 0.8s;
+  }
+  #loading-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  .loading-logo {
+    font-family: var(--font-display);
+    font-size: 3rem; letter-spacing: 0.2em; color: var(--gold);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  .loading-bar-track {
+    width: 200px; height: 1px; background: var(--border);
+  }
+  .loading-bar-fill {
+    height: 100%; background: var(--gold);
+    width: 0%; transition: width 0.1s linear;
+  }
+  .loading-text {
+    font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--silver);
+  }
+
+  /* ── STATS STRIP ── */
+  .stats-strip {
+    position: relative; z-index: 3;
+    display: flex; justify-content: center; flex-wrap: wrap;
+    gap: 0; background: var(--panel);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-item {
+    flex: 1; min-width: 140px;
+    padding: 28px 24px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+    transition: background 0.3s;
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-item:hover { background: rgba(200,169,110,0.05); }
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: 2.2rem; color: var(--gold);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--silver); margin-top: 6px;
+  }
+
+  /* ── SECTIONS BASE ── */
+  section {
+    position: relative; z-index: 3;
+    padding: 100px 6vw;
+  }
+
+  .section-eyebrow {
+    font-size: 0.62rem; letter-spacing: 0.35em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-eyebrow::before {
+    content: ''; display: block; width: 24px; height: 1px; background: var(--gold);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    line-height: 0.95; letter-spacing: 0.02em;
+  }
+
+  /* ── FEATURES ── */
+  #features { background: var(--deep); }
+
+  .features-header {
+    display: flex; justify-content: space-between;
+    align-items: flex-end; margin-bottom: 64px;
+    flex-wrap: wrap; gap: 24px;
+  }
+  .features-desc {
+    max-width: 360px;
+    font-family: var(--font-serif);
+    font-size: 1.1rem; font-weight: 300;
+    color: var(--silver); line-height: 1.7;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 2px;
+  }
+
+  .feature-card {
+    background: var(--charcoal);
+    padding: 40px 32px;
+    border: 1px solid var(--border);
+    transition: all 0.4s;
+    position: relative; overflow: hidden;
+  }
+  .feature-card::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    transform: scaleX(0); transition: transform 0.4s;
+  }
+  .feature-card:hover { border-color: rgba(200,169,110,0.3); transform: translateY(-4px); }
+  .feature-card:hover::before { transform: scaleX(1); }
+
+  .feature-icon {
+    width: 48px; height: 48px; margin-bottom: 24px;
+    color: var(--gold);
+  }
+  .feature-icon svg { width: 100%; height: 100%; }
+
+  .feature-title {
+    font-family: var(--font-serif);
+    font-size: 1.3rem; font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .feature-text {
+    font-size: 0.82rem; color: var(--silver); line-height: 1.7;
+  }
+
+  /* ── SHOWCASE ── */
+  #showcase { background: var(--black); }
+
+  .showcase-intro {
+    text-align: center; margin-bottom: 64px;
+  }
+
+  .car-specs-display {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px; margin-top: 64px;
+  }
+
+  .spec-block {
+    background: var(--charcoal);
+    border: 1px solid var(--border);
+    padding: 36px;
+    transition: all 0.3s;
+  }
+  .spec-block:hover { border-color: rgba(200,169,110,0.25); }
+  .spec-block:first-child {
+    grid-column: 1 / -1;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 40px; align-items: center;
+  }
+
+  .spec-label {
+    font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--silver); margin-bottom: 8px;
+  }
+  .spec-value {
+    font-family: var(--font-display);
+    font-size: 2.5rem; color: var(--white);
+    line-height: 1;
+  }
+  .spec-value span { font-size: 1rem; color: var(--gold); margin-left: 4px; }
+
+  .spec-desc {
+    font-family: var(--font-serif);
+    font-size: 1rem; font-weight: 300;
+    color: var(--silver); line-height: 1.7;
+  }
+
+  .specs-row {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+  }
+
+  /* ── 3D VIEWER SECTION ── */
+  #viewer-section {
+    background: var(--charcoal); padding: 0;
+    min-height: 100vh; display: flex; flex-direction: column;
+  }
+
+  .viewer-header {
+    padding: 60px 6vw 40px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    flex-wrap: wrap; gap: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #viewer-canvas-wrap {
+    flex: 1; position: relative; min-height: 70vh;
+    background: radial-gradient(ellipse at 50% 60%, #0d1520 0%, var(--charcoal) 70%);
+  }
+  #viewer-canvas-wrap canvas { display: block; }
+
+  .viewer-controls {
+    position: absolute; bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 12px; align-items: center;
+    background: rgba(5,5,7,0.7); backdrop-filter: blur(12px);
+    border: 1px solid var(--border); padding: 12px 24px;
+    border-radius: 40px;
+  }
+  .viewer-controls span {
+    font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--silver);
+  }
+  .viewer-controls .dot {
+    width: 3px; height: 3px; border-radius: 50%; background: var(--border);
+  }
+
+  .env-switcher {
+    display: flex; gap: 8px;
+  }
+  .env-btn {
+    font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--silver); background: transparent;
+    border: 1px solid var(--border); padding: 8px 16px;
+    cursor: pointer; font-family: var(--font-body);
+    transition: all 0.3s;
+  }
+  .env-btn.active, .env-btn:hover {
+    color: var(--gold); border-color: var(--gold);
+    background: rgba(200,169,110,0.08);
+  }
+
+  /* ── GALLERY ── */
+  #gallery { background: var(--deep); }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto;
+    gap: 3px; margin-top: 48px;
+  }
+
+  .gallery-cell {
+    position: relative; overflow: hidden;
+    background: var(--charcoal);
+    aspect-ratio: 16/10;
+  }
+  .gallery-cell:first-child {
+    grid-column: 1 / 3; grid-row: 1 / 2;
+    aspect-ratio: 16/7;
+  }
+  .gallery-cell:nth-child(4) {
+    grid-column: 2 / 4; grid-row: 2 / 3;
+    aspect-ratio: 16/7;
+  }
+
+  .gallery-cell-inner {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #0d0d14 0%, #1a1a28 50%, #0d0d14 100%);
+    transition: transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+  }
+  .gallery-cell:hover .gallery-cell-inner { transform: scale(1.04); }
+
+  .gallery-placeholder {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 4vw, 3rem);
+    color: rgba(200,169,110,0.15); letter-spacing: 0.1em;
+    text-align: center; padding: 20px;
+  }
+
+  .gallery-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(5,5,7,0.8) 0%, transparent 60%);
+    opacity: 0; transition: opacity 0.4s;
+    display: flex; align-items: flex-end; padding: 24px;
+  }
+  .gallery-cell:hover .gallery-overlay { opacity: 1; }
+
+  .gallery-caption {
+    font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .gallery-accent {
+    position: absolute; inset: 0; border: 1px solid transparent;
+    transition: border-color 0.4s;
+  }
+  .gallery-cell:hover .gallery-accent { border-color: rgba(200,169,110,0.3); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--deep);
+    border-top: 1px solid var(--border);
+    padding: 60px 6vw 32px;
+    position: relative; z-index: 3;
+  }
+
+  .footer-top {
+    display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 48px; margin-bottom: 48px;
+  }
+
+  .footer-logo {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+  }
+  .footer-logo img {
+    width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+    border: 1px solid var(--gold);
+  }
+  .footer-logo span {
+    font-family: var(--font-display);
+    font-size: 1.4rem; letter-spacing: 0.15em; color: var(--gold);
+  }
+  .footer-tagline {
+    font-family: var(--font-serif);
+    font-size: 0.95rem; font-weight: 300;
+    color: var(--silver); line-height: 1.7; max-width: 260px;
+  }
+
+  .footer-col h4 {
+    font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 20px;
+  }
+  .footer-col ul { list-style: none; }
+  .footer-col li { margin-bottom: 12px; }
+  .footer-col a {
+    font-size: 0.8rem; color: var(--silver); text-decoration: none;
+    transition: color 0.3s;
+  }
+  .footer-col a:hover { color: var(--white); }
+
+  .footer-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 24px; border-top: 1px solid var(--border);
+    flex-wrap: wrap; gap: 12px;
+  }
+  .footer-copy {
+    font-size: 0.7rem; color: rgba(168,170,184,0.5);
+    letter-spacing: 0.08em;
+  }
+  .footer-copy span { color: var(--gold); }
+
+  .footer-socials {
+    display: flex; gap: 16px;
+  }
+  .footer-socials a {
+    width: 32px; height: 32px; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--silver); text-decoration: none; font-size: 0.7rem;
+    transition: all 0.3s;
+  }
+  .footer-socials a:hover {
+    border-color: var(--gold); color: var(--gold);
+    background: rgba(200,169,110,0.08);
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+  @keyframes scrollPulse {
+    0% { transform: scaleY(0); transform-origin: top; opacity: 1; }
+    50% { transform: scaleY(1); transform-origin: top; opacity: 1; }
+    51% { transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+  }
+
+  .reveal {
+    opacity: 0; transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+
+  /* ── MOBILE RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 16px 20px; }
+    nav.scrolled { padding: 12px 20px; }
+    .nav-links { display: none; }
+    .nav-cta { padding: 8px 16px; font-size: 0.6rem; }
+    .nav-logo span { font-size: 1.2rem; }
+    section { padding: 60px 5vw; }
+    .hero-content { padding: 0 5vw; max-width: 100%; }
+    .features-header { flex-direction: column; }
+    .car-specs-display { grid-template-columns: 1fr; }
+    .spec-block:first-child { grid-column: 1; grid-template-columns: 1fr; }
+    .specs-row { grid-template-columns: 1fr; }
+    .gallery-grid { grid-template-columns: 1fr; }
+    .gallery-cell:first-child { grid-column: 1; }
+    .gallery-cell:nth-child(4) { grid-column: 1; }
+    .footer-top { grid-template-columns: 1fr 1fr; gap: 32px; }
+    .stats-strip { flex-direction: column; }
+    .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+    #cursor, #cursor-ring { display: none; }
+    body { cursor: auto; }
+    a, button { cursor: pointer; }
+  }
+
+  @media (max-width: 480px) {
+    .footer-top { grid-template-columns: 1fr; }
+    .hero-actions { flex-direction: column; }
+    .btn-primary, .btn-ghost { text-align: center; }
+  }
+
+  .gold-line {
+    width: 60px; height: 1px; background: var(--gold);
+    margin: 0 auto 32px;
+  }
+
+  .viewer-desc {
+    font-family: var(--font-serif);
+    font-size: 1rem; font-weight: 300; color: var(--silver);
+    max-width: 340px; line-height: 1.6;
+  }
+
+  .glow-blob {
+    position: absolute; border-radius: 50%;
+    filter: blur(80px); pointer-events: none; z-index: 0;
+  }
+  .glow-blob-gold {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(200,169,110,0.06) 0%, transparent 70%);
+  }
+  .glow-blob-blue {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(0,212,255,0.04) 0%, transparent 70%);
+  }
+</style>
+</head>
+
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <div class="loading-logo">WAKASA91</div>
+  <div class="loading-bar-track"><div class="loading-bar-fill" id="loading-bar"></div></div>
+  <div class="loading-text" id="loading-text">Initializing Engine</div>
+</div>
+
+<!-- CUSTOM CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="nav-logo">
+    <img src="./public/Wakasa91.jpg" alt="Wakasa91" onerror="this.style.display='none'" />
+    <span>WAKASA91</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Engineering</a></li>
+    <li><a href="#showcase">Specs</a></li>
+    <li><a href="#viewer-section">Explore</a></li>
+    <li><a href="#gallery">Gallery</a></li>
+  </ul>
+  <a href="#viewer-section" class="nav-cta">Configure</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div id="canvas-container"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">2025 Edition</div>
+    <h1 class="hero-title">PURE<br /><span>VELOCITY</span></h1>
+    <p class="hero-subtitle">Engineered beyond limits. Where precision meets artistry — a machine born to redefine the road.</p>
+    <div class="hero-actions">
+      <a href="#viewer-section" class="btn-primary">Experience in 3D</a>
+      <a href="#showcase" class="btn-ghost">View Specs</a>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- STATS STRIP -->
+<div class="stats-strip">
+  <div class="stat-item reveal"><div class="stat-num">0–60</div><div class="stat-label">2.4 Seconds</div></div>
+  <div class="stat-item reveal reveal-delay-1"><div class="stat-num">710</div><div class="stat-label">Horsepower</div></div>
+  <div class="stat-item reveal reveal-delay-2"><div class="stat-num">217</div><div class="stat-label">Top Speed MPH</div></div>
+  <div class="stat-item reveal reveal-delay-3"><div class="stat-num">AWD</div><div class="stat-label">Drivetrain</div></div>
+  <div class="stat-item reveal reveal-delay-4"><div class="stat-num">V12</div><div class="stat-label">Engine Config</div></div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="glow-blob glow-blob-gold" style="top:-100px;right:-100px;"></div>
+  <div class="features-header">
+    <div>
+      <div class="section-eyebrow reveal">Engineering Excellence</div>
+      <h2 class="section-title reveal reveal-delay-1">BEYOND<br />ORDINARY</h2>
+    </div>
+    <p class="features-desc reveal reveal-delay-2">Every detail engineered with obsessive precision. Not a car — a statement. An experience sculpted in carbon and light.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card reveal">
+      <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+      <div class="feature-title">Apex Performance</div>
+      <p class="feature-text">Twin-turbocharged V12 delivering 710 BHP. Zero to sixty in 2.4 seconds with linear, ferocious power delivery across the entire rev range.</p>
+    </div>
+    <div class="feature-card reveal reveal-delay-1">
+      <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></div>
+      <div class="feature-title">Carbon Architecture</div>
+      <p class="feature-text">Monocoque chassis constructed from aerospace-grade carbon fiber. 30% lighter than steel with 4× the tensile strength.</p>
+    </div>
+    <div class="feature-card reveal reveal-delay-2">
+      <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <div class="feature-title">Active Aerodynamics</div>
+      <p class="feature-text">Adaptive rear wing and underbody diffuser respond in real time to generate up to 1,200 kg of downforce at maximum velocity.</p>
+    </div>
+    <div class="feature-card reveal reveal-delay-3">
+      <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+      <div class="feature-title">Adaptive Chassis</div>
+      <p class="feature-text">Electromagnetic suspension reads road surface 1,000 times per second, adjusting each corner independently for perfect body control.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SHOWCASE / SPECS -->
+<section id="showcase">
+  <div class="glow-blob glow-blob-blue" style="bottom:-50px;left:-100px;"></div>
+  <div class="showcase-intro">
+    <div class="section-eyebrow reveal" style="justify-content:center;">Technical Specifications</div>
+    <h2 class="section-title reveal reveal-delay-1" style="text-align:center;">THE NUMBERS<br />SPEAK LOUDLY</h2>
+  </div>
+  <div class="car-specs-display">
+    <div class="spec-block reveal">
+      <div>
+        <div class="spec-label">Peak Output</div>
+        <div class="spec-value">710 <span>BHP</span></div>
+        <div class="spec-label" style="margin-top:16px;">@ 8,400 RPM</div>
+      </div>
+      <p class="spec-desc">The hand-assembled V12 represents a pinnacle of internal combustion engineering. Each engine takes 240 hours to build, with tolerances measured in microns.</p>
+    </div>
+    <div class="specs-row" style="grid-column: 1 / -1;">
+      <div class="spec-block reveal"><div class="spec-label">0 – 60 mph</div><div class="spec-value">2.4 <span>sec</span></div></div>
+      <div class="spec-block reveal reveal-delay-1"><div class="spec-label">Top Speed</div><div class="spec-value">217 <span>mph</span></div></div>
+      <div class="spec-block reveal reveal-delay-2"><div class="spec-label">Curb Weight</div><div class="spec-value">1,290 <span>kg</span></div></div>
+    </div>
+    <div class="specs-row" style="grid-column: 1 / -1;">
+      <div class="spec-block reveal"><div class="spec-label">Torque</div><div class="spec-value">620 <span>lb·ft</span></div></div>
+      <div class="spec-block reveal reveal-delay-1"><div class="spec-label">Downforce</div><div class="spec-value">1,200 <span>kg</span></div></div>
+      <div class="spec-block reveal reveal-delay-2"><div class="spec-label">Gearbox</div><div class="spec-value">7 <span>speed</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3D VIEWER -->
+<section id="viewer-section">
+  <div class="viewer-header">
+    <div class="viewer-title-area">
+      <div class="section-eyebrow reveal">Interactive Studio</div>
+      <h2 class="section-title reveal reveal-delay-1">EXPLORE<br />EVERY ANGLE</h2>
+    </div>
+    <div>
+      <p class="viewer-desc reveal reveal-delay-2">Drag to rotate. Scroll to zoom. Double-tap to reset. The car is yours to command.</p>
+      <div class="env-switcher" style="margin-top:16px;">
+        <button class="env-btn active" id="env-studio">Studio</button>
+        <button class="env-btn" id="env-outdoor">Outdoor</button>
+        <button class="env-btn" id="env-night">Night</button>
+      </div>
+    </div>
+  </div>
+  <div id="viewer-canvas-wrap">
+    <div class="viewer-controls">
+      <span>Drag to Rotate</span>
+      <div class="dot"></div>
+      <span>Scroll to Zoom</span>
+      <div class="dot"></div>
+      <span>Double-click Reset</span>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section id="gallery">
+  <div class="section-eyebrow reveal">Visual Archive</div>
+  <h2 class="section-title reveal reveal-delay-1">CRAFTED<br />IN LIGHT</h2>
+  <div class="gallery-grid">
+    <div class="gallery-cell">
+      <div class="gallery-cell-inner">
+        <div class="gallery-placeholder">FRONT PROFILE</div>
+        <div style="width:80%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin-top:12px;"></div>
+      </div>
+      <div class="gallery-overlay"><div class="gallery-caption">Front Profile · Studio</div></div>
+      <div class="gallery-accent"></div>
+    </div>
+    <div class="gallery-cell">
+      <div class="gallery-cell-inner"><div class="gallery-placeholder">REAR QUARTER</div></div>
+      <div class="gallery-overlay"><div class="gallery-caption">Rear Quarter · Dusk</div></div>
+      <div class="gallery-accent"></div>
+    </div>
+    <div class="gallery-cell">
+      <div class="gallery-cell-inner" style="background:linear-gradient(135deg,#100808 0%,#1f0a0a 100%);">
+        <div class="gallery-placeholder" style="color:rgba(255,80,60,0.12);">INTERIOR</div>
+      </div>
+      <div class="gallery-overlay"><div class="gallery-caption">Interior · Cabin</div></div>
+      <div class="gallery-accent"></div>
+    </div>
+    <div class="gallery-cell">
+      <div class="gallery-cell-inner" style="background:linear-gradient(135deg,#080f14 0%,#0d1f2d 100%);">
+        <div class="gallery-placeholder" style="color:rgba(0,150,200,0.12);">SIDE SWEEP</div>
+        <div style="width:80%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.3),transparent);margin-top:12px;"></div>
+      </div>
+      <div class="gallery-overlay"><div class="gallery-caption">Side Sweep · Outdoor</div></div>
+      <div class="gallery-accent"></div>
+    </div>
+    <div class="gallery-cell">
+      <div class="gallery-cell-inner" style="background:linear-gradient(135deg,#0a0a08 0%,#1a1a10 100%);">
+        <div class="gallery-placeholder" style="color:rgba(200,169,110,0.1);">WHEEL DETAIL</div>
+      </div>
+      <div class="gallery-overlay"><div class="gallery-caption">Wheel Detail · Macro</div></div>
+      <div class="gallery-accent"></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <img src="./public/Wakasa91.jpg" alt="Wakasa91" onerror="this.style.display='none'" />
+        <span>WAKASA91</span>
+      </div>
+      <p class="footer-tagline">Precision-crafted automobiles for those who demand the extraordinary.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Models</h4>
+      <ul>
+        <li><a href="#">GT Series</a></li>
+        <li><a href="#">Sport Edition</a></li>
+        <li><a href="#">Track Package</a></li>
+        <li><a href="#">Limited Run</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Experience</h4>
+      <ul>
+        <li><a href="#viewer-section">3D Configurator</a></li>
+        <li><a href="#">Test Drive</a></li>
+        <li><a href="#">Showrooms</a></li>
+        <li><a href="#">Events</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <ul>
+        <li><a href="#">About</a></li>
+        <li><a href="#">Heritage</a></li>
+        <li><a href="#">Motorsport</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2025 <span>Wakasa91</span> Automotive. All rights reserved.</div>
+    <div class="footer-socials">
+      <a href="#">IG</a><a href="#">TW</a><a href="#">YT</a><a href="#">LI</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ── UTILITIES ── */
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+/* ── CURSOR ── */
+(function initCursor() {
+  const cursor = document.getElementById('cursor');
+  const ring   = document.getElementById('cursor-ring');
+  if (!cursor || !ring) return;
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+  (function animateCursor() {
+    rx = lerp(rx, mx, 0.14); ry = lerp(ry, my, 0.14);
+    cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+    ring.style.left   = rx + 'px'; ring.style.top   = ry + 'px';
+    requestAnimationFrame(animateCursor);
+  })();
+  document.querySelectorAll('a, button, .feature-card, .gallery-cell').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.transform = 'translate(-50%,-50%) scale(2)';
+      ring.style.opacity = '0.2';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.transform = 'translate(-50%,-50%) scale(1)';
+      ring.style.opacity = '0.5';
+    });
+  });
+})();
+
+/* ── LOADING ── */
+let loadProgress = 0;
+const loadingBar    = document.getElementById('loading-bar');
+const loadingText   = document.getElementById('loading-text');
+const loadingScreen = document.getElementById('loading-screen');
+const loadMessages  = ['Initializing Engine','Loading 3D Assets','Calibrating Lighting','Preparing Showroom','Ready'];
+
+function advanceLoading(target) {
+  const interval = setInterval(() => {
+    if (loadProgress >= target) { clearInterval(interval); return; }
+    loadProgress = Math.min(loadProgress + 1, target);
+    if (loadingBar) loadingBar.style.width = loadProgress + '%';
+    if (loadingText) loadingText.textContent = loadMessages[Math.min(Math.floor(loadProgress / 25), loadMessages.length - 1)];
+  }, 18);
+}
+advanceLoading(40);
+
+/* ── SCROLL REVEAL ── */
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+/* ── NAV ── */
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 60);
+}, { passive: true });
+
+/* ────────────────────────────────────────────
+   HERO SCENE
+──────────────────────────────────────────── */
+(function initHeroScene() {
+  const container = document.getElementById('canvas-container');
+  if (!container) return;
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
+  renderer.physicallyCorrectLights = true;
+  container.appendChild(renderer.domElement);
+
+  const scene  = new THREE.Scene();
+  scene.fog    = new THREE.FogExp2(0x050507, 0.045);
+
+  const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 200);
+  camera.position.set(4.5, 1.6, 7);
+  camera.lookAt(0, 0.3, 0);
+
+  const targetCam  = { x: 4.5, y: 1.6 };
+  let   currentCam = { x: 4.5, y: 1.6 };
+
+  /* lights */
+  scene.add(new THREE.AmbientLight(0x111120, 0.4));
+
+  const keyLight = new THREE.DirectionalLight(0xfff4e8, 2.5);
+  keyLight.position.set(3, 8, 4);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(2048, 2048);
+  keyLight.shadow.camera.left = -8; keyLight.shadow.camera.right = 8;
+  keyLight.shadow.camera.top  =  8; keyLight.shadow.camera.bottom= -8;
+  keyLight.shadow.bias = -0.0003;
+  scene.add(keyLight);
+
+  const rimLight = new THREE.DirectionalLight(0x88ccff, 1.8);
+  rimLight.position.set(-5, 3, -6);
+  scene.add(rimLight);
+
+  const fillLight = new THREE.PointLight(0xc8a96e, 0.8, 20);
+  fillLight.position.set(-3, 2, 5);
+  scene.add(fillLight);
+
+  const neonLight = new THREE.PointLight(0x0088cc, 0.5, 12);
+  neonLight.position.set(0, -0.5, 0);
+  scene.add(neonLight);
+
+  const spotLight = new THREE.SpotLight(0xfff8f0, 3, 20, Math.PI * 0.18, 0.4, 1.5);
+  spotLight.position.set(0, 10, 2);
+  spotLight.castShadow = true;
+  scene.add(spotLight);
+  scene.add(spotLight.target);
+
+  /* floor */
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(40, 40),
+    new THREE.MeshStandardMaterial({ color: 0x050508, metalness: 0.9, roughness: 0.1 })
+  );
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -0.001;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  const disk = new THREE.Mesh(
+    new THREE.CircleGeometry(3.5, 64),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.03 })
+  );
+  disk.rotation.x = -Math.PI / 2;
+  disk.position.y = 0.001;
+  scene.add(disk);
+
+  scene.add(new THREE.GridHelper(30, 30, 0x222230, 0x111118));
+
+  /* environment */
+  if (THREE.RoomEnvironment) {
+    try {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      pmrem.compileEquirectangularShader();
+      scene.environment = pmrem.fromScene(new THREE.RoomEnvironment()).texture;
+      pmrem.dispose();
+    } catch(e) {}
+  }
+
+  /* car group */
+  const carGroup = new THREE.Group();
+  scene.add(carGroup);
+
+  /* ── FIX 1: hero loads from ./public/car.glb ── */
+  const loader = new THREE.GLTFLoader();
+  loader.load(
+    './public/car.glb',               // ← fixed path (was 'car.glb')
+    (gltf) => {
+      const carModel = gltf.scene;
+
+      /* auto-center & scale */
+      const box    = new THREE.Box3().setFromObject(carModel);
+      const center = box.getCenter(new THREE.Vector3());
+      const size   = box.getSize(new THREE.Vector3());
+      const scale  = 3.5 / Math.max(size.x, size.y, size.z);
+
+      carModel.scale.setScalar(scale);
+      carModel.position.sub(center.multiplyScalar(scale));
+      carModel.position.y = 0;
+
+      carModel.traverse(child => {
+        if (child.isMesh) {
+          child.castShadow    = true;
+          child.receiveShadow = true;
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach(m => {
+            if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+              m.envMapIntensity = 1.8;
+              m.needsUpdate = true;
+            }
+          });
+        }
+      });
+
+      carGroup.add(carModel);
+      advanceLoading(100);
+      setTimeout(() => { loadingScreen.classList.add('hidden'); }, 800);
+    },
+    (xhr) => {
+      if (xhr.total > 0) advanceLoading(40 + Math.floor((xhr.loaded / xhr.total) * 55));
+    },
+    () => {
+      /* fallback placeholder */
+      buildPlaceholderCar();
+      advanceLoading(100);
+      setTimeout(() => { loadingScreen.classList.add('hidden'); }, 800);
+    }
+  );
+
+  function buildPlaceholderCar() {
+    const carMat  = new THREE.MeshPhysicalMaterial({ color: 0x111118, metalness: 0.95, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.02 });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xc8a96e, metalness: 0.9, roughness: 0.2 });
+    const glassMat= new THREE.MeshPhysicalMaterial({ color: 0x88aacc, transparent: true, opacity: 0.35, transmission: 0.7 });
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(4, 0.7, 1.8), carMat);
+    body.position.y = 0.5; body.castShadow = true; carGroup.add(body);
+
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.6, 1.6), glassMat);
+    cabin.position.set(0.1, 1.05, 0); carGroup.add(cabin);
+
+    const wGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.22, 32);
+    const wMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.8 });
+    const rGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.24, 16);
+    [[1.4,0,0.95],[1.4,0,-0.95],[-1.4,0,0.95],[-1.4,0,-0.95]].forEach(([x,y,z]) => {
+      const w = new THREE.Mesh(wGeo, wMat); w.rotation.z = Math.PI/2; w.position.set(x,y,z); carGroup.add(w);
+      const r = new THREE.Mesh(rGeo, goldMat); r.rotation.z = Math.PI/2; r.position.set(x,y,z); carGroup.add(r);
+    });
+
+    const hlGeo = new THREE.SphereGeometry(0.1, 16, 16);
+    const hlMat = new THREE.MeshBasicMaterial({ color: 0xfff8e0 });
+    [-0.5, 0.5].forEach(z => {
+      const hl = new THREE.Mesh(hlGeo, hlMat);
+      hl.position.set(2.1, 0.55, z); carGroup.add(hl);
+    });
+  }
+
+  /* parallax */
+  const heroSection = document.getElementById('hero');
+  heroSection.addEventListener('mousemove', e => {
+    const rect = heroSection.getBoundingClientRect();
+    targetCam.x = 4.5 + ((e.clientX / rect.width)  - 0.5) * 2 * 0.8;
+    targetCam.y = 1.6 - ((e.clientY / rect.height) - 0.5) * 2 * 0.3;
+  }, { passive: true });
+
+  let scrollY = 0;
+  window.addEventListener('scroll', () => { scrollY = window.scrollY; }, { passive: true });
+
+  window.addEventListener('resize', () => {
+    const w = container.clientWidth, h = container.clientHeight;
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  });
+
+  let t = 0;
+  (function animateHero() {
+    requestAnimationFrame(animateHero);
+    t += 0.008;
+    currentCam.x = lerp(currentCam.x, targetCam.x, 0.04);
+    currentCam.y = lerp(currentCam.y, targetCam.y, 0.04);
+    camera.position.x = currentCam.x;
+    camera.position.y = currentCam.y;
+    camera.position.z = 7 + Math.min(scrollY / window.innerHeight, 1) * 3;
+    camera.lookAt(0, 0.3, 0);
+    carGroup.rotation.y = t * 0.18;
+    neonLight.intensity = 0.5 + Math.sin(t * 1.5) * 0.2;
+    disk.material.opacity = 0.02 + Math.sin(t * 0.8) * 0.01;
+    renderer.render(scene, camera);
+  })();
+})();
+
+/* ────────────────────────────────────────────
+   INTERACTIVE VIEWER SCENE
+──────────────────────────────────────────── */
+(function initViewerScene() {
+  const container = document.getElementById('viewer-canvas-wrap');
+  if (!container) return;
+
+  const W = container.clientWidth  || window.innerWidth;
+  const H = Math.max(container.clientHeight, window.innerHeight * 0.65);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.3;
+  renderer.physicallyCorrectLights = true;
+  container.insertBefore(renderer.domElement, container.querySelector('.viewer-controls'));
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0c0c14);
+
+  const camera = new THREE.PerspectiveCamera(42, W / H, 0.1, 200);
+  camera.position.set(5, 2, 7);
+
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping   = true;
+  controls.dampingFactor   = 0.05;
+  controls.minDistance     = 3;
+  controls.maxDistance     = 16;
+  controls.maxPolarAngle   = Math.PI * 0.48;
+  controls.target.set(0, 0.4, 0);
+  controls.autoRotate      = true;
+  controls.autoRotateSpeed = 0.6;
+
+  scene.add(new THREE.AmbientLight(0x111120, 0.5));
+
+  const keyL = new THREE.DirectionalLight(0xfff4e0, 3);
+  keyL.position.set(4, 10, 5);
+  keyL.castShadow = true;
+  keyL.shadow.mapSize.set(2048, 2048);
+  keyL.shadow.camera.left = -8; keyL.shadow.camera.right = 8;
+  keyL.shadow.camera.top  =  8; keyL.shadow.camera.bottom= -8;
+  keyL.shadow.bias = -0.0003;
+  scene.add(keyL);
+
+  const rimL  = new THREE.DirectionalLight(0x6699ff, 2);
+  rimL.position.set(-6, 4, -7);
+  scene.add(rimL);
+
+  const fillL = new THREE.PointLight(0xc8a96e, 1, 25);
+  fillL.position.set(-4, 3, 6);
+  scene.add(fillL);
+
+  const spotV = new THREE.SpotLight(0xffffff, 4, 25, Math.PI * 0.15, 0.4, 1.5);
+  spotV.position.set(0, 12, 3);
+  spotV.castShadow = true;
+  scene.add(spotV); scene.add(spotV.target);
+
+  const floorV = new THREE.Mesh(
+    new THREE.CircleGeometry(12, 128),
+    new THREE.MeshStandardMaterial({ color: 0x050508, metalness: 0.95, roughness: 0.08 })
+  );
+  floorV.rotation.x = -Math.PI / 2;
+  floorV.receiveShadow = true;
+  scene.add(floorV);
+
+  for (let i = 1; i <= 5; i++) {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(i * 1.8, i * 1.8 + 0.015, 80),
+      new THREE.MeshBasicMaterial({ color: 0x222230, side: THREE.DoubleSide })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.001;
+    scene.add(ring);
+  }
+
+  const carGrp = new THREE.Group();
+  scene.add(carGrp);
+
+  /* ── FIX 2: viewer also loads from ./public/car.glb ── */
+  const vLoader = new THREE.GLTFLoader();
+  vLoader.load(
+    './public/car.glb',               // ← already correct, confirmed
+    (gltf) => {
+      const viewerCar = gltf.scene;
+      const box    = new THREE.Box3().setFromObject(viewerCar);
+      const center = box.getCenter(new THREE.Vector3());
+      const size   = box.getSize(new THREE.Vector3());
+      const scale  = 3.5 / Math.max(size.x, size.y, size.z);
+
+      viewerCar.scale.setScalar(scale);
+      viewerCar.position.sub(center.multiplyScalar(scale));
+      viewerCar.position.y = 0;
+
+      viewerCar.traverse(child => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach(m => {
+            if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+              m.envMapIntensity = 2.0; m.needsUpdate = true;
+            }
+          });
+        }
+      });
+      carGrp.add(viewerCar);
+    },
+    null,
+    () => { buildViewerPlaceholder(); }
+  );
+
+  function buildViewerPlaceholder() {
+    const mat   = new THREE.MeshPhysicalMaterial({ color: 0x111118, metalness: 0.95, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.02 });
+    const goldM = new THREE.MeshStandardMaterial({ color: 0xc8a96e, metalness: 0.9, roughness: 0.2 });
+    const body  = new THREE.Mesh(new THREE.BoxGeometry(4, 0.7, 1.8), mat);
+    body.position.y = 0.5; body.castShadow = true; carGrp.add(body);
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.6, 1.6),
+      new THREE.MeshPhysicalMaterial({ color: 0x88aacc, transparent: true, opacity: 0.35, transmission: 0.7 }));
+    cab.position.set(0.1, 1.05, 0); carGrp.add(cab);
+    const wGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.22, 32);
+    const wMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a });
+    const rGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.24, 16);
+    [[1.4,0,0.95],[1.4,0,-0.95],[-1.4,0,0.95],[-1.4,0,-0.95]].forEach(([x,y,z]) => {
+      const w = new THREE.Mesh(wGeo, wMat); w.rotation.z = Math.PI/2; w.position.set(x,y,z); carGrp.add(w);
+      const r = new THREE.Mesh(rGeo, goldM); r.rotation.z = Math.PI/2; r.position.set(x,y,z); carGrp.add(r);
+    });
+  }
+
+  /* environment switching */
+  function switchEnv(mode) {
+    const cfg = {
+      studio:  { bg: 0x0c0c14, key: 0xfff4e0, rim: 0x6699ff, exp: 1.3, fill: 0xc8a96e, fi: 1.0 },
+      outdoor: { bg: 0x0a1018, key: 0xfff2d0, rim: 0xc8d8ff, exp: 1.5, fill: 0xfff0d0, fi: 0.8 },
+      night:   { bg: 0x030308, key: 0x2244aa, rim: 0x00ccff, exp: 0.9, fill: 0x0044aa, fi: 2.5 },
+    }[mode];
+    scene.background = new THREE.Color(cfg.bg);
+    scene.fog = new THREE.FogExp2(cfg.bg, 0.035);
+    keyL.color.set(cfg.key);
+    rimL.color.set(cfg.rim);
+    fillL.color.set(cfg.fill);
+    fillL.intensity = cfg.fi;
+    renderer.toneMappingExposure = cfg.exp;
+  }
+
+  ['studio','outdoor','night'].forEach(mode => {
+    document.getElementById('env-' + mode).addEventListener('click', function() {
+      switchEnv(mode);
+      document.querySelectorAll('.env-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  renderer.domElement.addEventListener('dblclick', () => {
+    controls.reset(); camera.position.set(5, 2, 7);
+  });
+  renderer.domElement.addEventListener('pointerdown', () => { controls.autoRotate = false; });
+  renderer.domElement.addEventListener('pointerup', () => {
+    setTimeout(() => { controls.autoRotate = true; }, 3000);
+  });
+
+  new ResizeObserver(() => {
+    const W2 = container.clientWidth;
+    const H2 = container.clientHeight || Math.max(window.innerHeight * 0.65, 400);
+    camera.aspect = W2 / H2; camera.updateProjectionMatrix();
+    renderer.setSize(W2, H2);
+  }).observe(container);
+
+  let tv = 0;
+  (function animateViewer() {
+    requestAnimationFrame(animateViewer);
+    tv += 0.01;
+    controls.update();
+    rimL.intensity = 2 + Math.sin(tv * 0.7) * 0.5;
+    renderer.render(scene, camera);
+  })();
+})();
+</script>
+</body>
+</html>
